@@ -116,6 +116,19 @@ function update_state(state)
     state["log"].forEach(function(e, i)
     {
         var row = e.split("|");
+        var action;
+        switch(row[2])
+        {
+            case "1":
+                action = "On";
+                break;
+            case "0":
+                action = "Off";
+                break;
+            case "b":
+                action = "Device Boot";
+                break;
+        }
         switch(row[1])
         {
             case "1":
@@ -123,7 +136,7 @@ function update_state(state)
                 if(log_counts["1"]<log_starts["1"])
                     return;
                 $("#relay1_actionlog").prepend($("<li></li>")
-                    .text(iso8601ToTimestamp(row[0])+": "+((row[2]=="1") ? "On" : "Off"))
+                    .text(iso8601ToTimestamp(row[0])+": "+action)
                 );
                 break;
             case "2":
@@ -131,7 +144,7 @@ function update_state(state)
                 if(log_counts["2"]<log_starts["2"])                        
                     return;
                 $("#relay2_actionlog").prepend($("<li></li>")                                        
-                    .text(iso8601ToTimestamp(row[0])+": "+((row[2]=="1") ? "On" : "Off"))          
+                    .text(iso8601ToTimestamp(row[0])+": "+action)          
                 );                                                                                 
                 break;
         }

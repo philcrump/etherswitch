@@ -47,4 +47,19 @@ function state_update(output, state)
     end
 end
         
-    
+function state_read(output)
+    local state = JSON:decode(state_readjson())
+    if state[tostring(output)] == 1
+    then
+        return true
+    else
+        return false
+    end
+end
+
+function state_writeboot()
+    local state = JSON:decode(state_readjson())
+    table.insert(state["log"], os.date("!%Y-%m-%dT%TZ") .. "|1|" .. "b")
+    table.insert(state["log"], os.date("!%Y-%m-%dT%TZ") .. "|2|" .. "b")
+    state_writejson(JSON:encode(state)) 
+end
