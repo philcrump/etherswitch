@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<title>GHY99 HAMTV Power Control</title>
+<link href="assets/bootstrap-3.3.7/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+<div class="container">
+<div class="page-header">
+  <h1>GHY99 HAMTV Receiver Power Control</h1>
+</div>
+<div class="row">
+ <div class="col-sm-6">
+   <div id="relay1" class="panel panel-default">
+    <div class="panel-heading">
+      <h3 class="panel-title">Output 1</h3>
+    </div>
+    <div class="panel-body">
+      Current Status: <span style="font-weight: bold;">On</span>
+      <button type="button" class="btn btn-lg btn-success disabled" id="btn_relay1_on">On</button>
+      <button type="button" class="btn btn-lg btn-danger disabled" id="btn_relay1_off">Off</button>
+      <br>
+      Action Log:
+      <ul id="relay1_actionlog">
+      </ul>
+    </div>
+   </div>
+ </div>
+ <div class="col-sm-6">
+   <div id="relay2" class="panel panel-default">
+    <div class="panel-heading">
+      <h3 class="panel-title">Output 2</h3>
+    </div>
+    <div class="panel-body">
+      Current Status: <span style="font-weight: bold;">Off</span>
+      <button type="button" class="btn btn-lg btn-success disabled" id="btn_relay2_on">On</button>
+      <button type="button" class="btn btn-lg btn-danger disabled" id="btn_relay2_off">Off</button>
+      <br>
+      Action Log:
+      <ul id="relay2_actionlog">
+      </ul>
+    </div>
+  </div>
+ </div>
+</div>
+</div>
+</body>
+<script src="assets/jquery-3.1.1.min.js"></script>
+<script src="assets/bootstrap-3.3.7/js/bootstrap.min.js"></script>
+<script>
+function relay_action(path)
+{
+    $.getJSON("api/"+path+".lua")
+        .done(function(data)
+        {
+            console.log(data);
+            update_state(data);
+        })
+        .fail(function(obj)
+        {
+            console.log("failed");
+        }
+    );
+}
+
+function iso8601ToTimestamp(iso8601)
+{
+    var d = new Date(iso8601);
+    return d.toLocaleDateString()+" "+d.toLocaleTimeString();
+}
+
+function update_state(state)
+{
+    if(state["1"] == 0)
+    {
+        $("#relay1").removeClass("panel-success");
+        $("#relay1").addClass("panel-danger");
+        $("#btn_relay1_off").addClass("disabled");
+        $("#btn_relay1_on").removeClass("disabled");
+    }
+    else
+    {
+        $("#relay1").removeClass("panel-danger");
+        $("#relay1").addClass("panel-success");
+        $("#btn_relay1_on").addClass("disabled");
+        $("#btn_relay1_off").removeClass("disabled");
+    }
+        
+    if(state["2"] == 0)
+    {
+        $("#relay2").removeClass("panel-success").addClass("panel-danger");
+        $("#btn_relay2_off").addClass("disabled");
+        $("#btn_relay2_on").removeClass("disabled");
+    }
+    else
+    {
+        $("#relay2").removeClass("panel-danger").addClass("panel-success");
+        $("#btn_relay2_on").addClass("disabled");
+        $("#btn_relay2_off").removeClass("disabled");
+    }
+    
+    $("#relay1_actionlog").empty();
+    $("#relay2_actionlog").empty();
+    var log_lengths = {"1":0, "2":0};
+    state["log"].forEach(function(e, i)                                    
+    {
+        log_lengths[e.split("|")[1]]++;
+    });
+    var log_starts = {
+        "1": Math.max(0, log_lengths["1"]-30),
+        "2": Math.max(0, log_lengths["2"]-30)
+    };
+    var log_counts = {"1":0, "2":0};
+    state["log"].forEach(function(e, i)
+    {
+        var row = e.split("|");
+        switch(row[1])
+        {
+            case "1":
+                log_counts["1"]++;
+                if(log_counts["1"]<log_starts["1"])
+                    return;
+                $("#relay1_actionlog").prepend($("<li></li>")
+                    .text(iso8601ToTimestamp(row[0])+": "+((row[2]=="1") ? "On" : "Off"))
+                );
+                break;
+            case "2":
+                log_counts["2"]++;                                         
+                if(log_counts["2"]<log_starts["2"])                        
+                    return;
+                $("#relay2_actionlog").prepend($("<li></li>")                                        
+                    .text(iso8601ToTimestamp(row[0])+": "+((row[2]=="1") ? "On" : "Off"))          
+                );                                                                                 
+                break;
+        }
+    });
+}
+
+
+
+$(function () {
+    /* Load initial state */
+    $.getJSON("api/state.lua")
+        .done(function(data)
+        {
+            console.log(data);
+            update_state(data);
+        })
+        .fail(function(obj)
+        {
+            console.log("failed");
+        }
+    );
+    
+    /* Set up button handler */
+    $(".btn").click(function(event)
+    {
+      event.preventDefault();
+      
+      switch(event.currentTarget.id)
+      {
+        case "btn_relay1_on":
+            relay_action("1_on");
+            break;
+        case "btn_relay1_off":
+            relay_action("1_off");
+            break;
+        case "btn_relay2_on":
+            relay_action("2_on");
+            break;
+        case "btn_relay2_off":
+            relay_action("2_off");
+            break;
+      }
+    });
+});
+</script>
+</html>

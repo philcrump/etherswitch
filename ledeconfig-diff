@@ -1,0 +1,6 @@
+CONFIG_TARGET_ar71xx=y
+CONFIG_TARGET_ar71xx_generic=y
+CONFIG_TARGET_ar71xx_generic_DEVICE_gl-ar150=y
+CONFIG_PACKAGE_liblua=y
+CONFIG_PACKAGE_lua=y
+CONFIG_PACKAGE_uhttpd=y
