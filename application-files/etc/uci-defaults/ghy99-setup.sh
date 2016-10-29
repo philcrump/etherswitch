@@ -1,8 +1,5 @@
 #!/bin/sh
-
-/etc/init.d/relay_outputs enable
-
-/etc/init.d/openvpn enable
-
-sleep 30
-reboot
+if [ -f /etc/openvpn/openvpn-enable.sh ]; then
+  /etc/openvpn/openvpn-enable.sh;
+  rm /etc/openvpn/openvpn-enable.sh;
+fi
