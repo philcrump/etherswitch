@@ -5,6 +5,18 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <title>GHY99 HAMTV Power Control</title>
 <link href="assets/bootstrap-3.3.7/css/bootstrap.min.css" rel="stylesheet">
+<style>
+.btn {
+    margin-left: 20px;
+}
+.relay-status {
+    display: inline-block;
+    margin-left: 12px;
+    width: 35px;
+    font-size: 1.5em;
+    font-weight: bold;
+}
+</style>
 </head>
 <body>
 <div class="container">
@@ -18,10 +30,10 @@
       <h3 class="panel-title">Output 1</h3>
     </div>
     <div class="panel-body">
-      Current Status: <span style="font-weight: bold;">On</span>
-      <button type="button" class="btn btn-lg btn-success disabled" id="btn_relay1_on">On</button>
+      Current Status: <span id="relay1_status" class="relay-status"></span>
       <button type="button" class="btn btn-lg btn-danger disabled" id="btn_relay1_off">Off</button>
-      <br>
+      <button type="button" class="btn btn-lg btn-success disabled" id="btn_relay1_on">On</button>
+      <br><br><br>
       Action Log:
       <ul id="relay1_actionlog">
       </ul>
@@ -34,10 +46,10 @@
       <h3 class="panel-title">Output 2</h3>
     </div>
     <div class="panel-body">
-      Current Status: <span style="font-weight: bold;">Off</span>
-      <button type="button" class="btn btn-lg btn-success disabled" id="btn_relay2_on">On</button>
+      Current Status: <span id="relay2_status" class="relay-status"></span>
       <button type="button" class="btn btn-lg btn-danger disabled" id="btn_relay2_off">Off</button>
-      <br>
+      <button type="button" class="btn btn-lg btn-success disabled" id="btn_relay2_on">On</button>
+      <br><br><br>
       Action Log:
       <ul id="relay2_actionlog">
       </ul>
@@ -75,17 +87,17 @@ function update_state(state)
 {
     if(state["1"] == 0)
     {
-        $("#relay1").removeClass("panel-success");
-        $("#relay1").addClass("panel-danger");
+        $("#relay1").removeClass("panel-success").addClass("panel-danger");
         $("#btn_relay1_off").addClass("disabled");
         $("#btn_relay1_on").removeClass("disabled");
+        $("#relay1_status").text("Off");
     }
     else
     {
-        $("#relay1").removeClass("panel-danger");
-        $("#relay1").addClass("panel-success");
+        $("#relay1").removeClass("panel-danger").addClass("panel-success");
         $("#btn_relay1_on").addClass("disabled");
         $("#btn_relay1_off").removeClass("disabled");
+        $("#relay1_status").text("On");
     }
         
     if(state["2"] == 0)
@@ -93,12 +105,14 @@ function update_state(state)
         $("#relay2").removeClass("panel-success").addClass("panel-danger");
         $("#btn_relay2_off").addClass("disabled");
         $("#btn_relay2_on").removeClass("disabled");
+        $("#relay2_status").text("Off");
     }
     else
     {
         $("#relay2").removeClass("panel-danger").addClass("panel-success");
         $("#btn_relay2_on").addClass("disabled");
         $("#btn_relay2_off").removeClass("disabled");
+        $("#relay2_status").text("On");
     }
     
     $("#relay1_actionlog").empty();
