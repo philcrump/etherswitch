@@ -5,8 +5,8 @@ state_filename="/www/api/output_state.json"
 JSON = (loadfile "/www/api/libjson.lua")()
 
 state_init = {}
-state_init["0"] = 0;
 state_init["1"] = 0;
+state_init["2"] = 0;
 state_init["log"] = {};
 
 

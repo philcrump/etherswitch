@@ -3,11 +3,20 @@
 <head>
 <meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
-<title>GHY99 HAMTV Power Control</title>
+<meta name="description" content="Goonhilly HAMTV Earth Station Power Control">
+<meta name="author" content="Phil Crump M0DNY">
+<title>GHY99 Power Control</title>
+<link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png">
+<link rel="icon" type="image/png" href="assets/favicon-32x32.png" sizes="32x32">
+<link rel="icon" type="image/png" href="assets/favicon-16x16.png" sizes="16x16">
+<link rel="manifest" href="assets/manifest.json">
 <link href="assets/bootstrap-3.3.7/css/bootstrap.min.css" rel="stylesheet">
 <style>
 .btn {
     margin-left: 20px;
+}
+.relay-status-label {
+    font-size: 1.5em;
 }
 .relay-status {
     display: inline-block;
@@ -16,25 +25,51 @@
     font-size: 1.5em;
     font-weight: bold;
 }
+.connection-state-error {
+    color: red;
+}
+.action-on {
+    background-color: #5cb85c;
+    color: #fff;
+    padding-right: 0.3em;
+    padding-left: 0.3em;
+    border-radius: .25em;
+}
+.action-off {
+    background-color: #d9534f;
+    color: #fff;
+    padding-right: 0.3em;
+    padding-left: 0.3em;
+    border-radius: .25em;
+}
+.action-boot {
+    background-color: #5bc0de;
+    color: #fff;
+    padding-right: 0.3em;
+    padding-left: 0.3em;
+    border-radius: .25em;
+}
 </style>
 </head>
 <body>
 <div class="container">
 <div class="page-header">
-  <h1>GHY99 HAMTV Receiver Power Control</h1>
+  <h1>Goonhilly HAMTV Earth Station Power Control</h1>
+  Last updated: <span id="state_updated">updating..</span>
 </div>
 <div class="row">
  <div class="col-sm-6">
    <div id="relay1" class="panel panel-default">
     <div class="panel-heading">
-      <h3 class="panel-title">Output 1</h3>
+      <h3 class="panel-title">Minitioune Computer</h3>
     </div>
     <div class="panel-body">
-      Current Status: <span id="relay1_status" class="relay-status"></span>
+      <span class="relay-status-label">Current Status: </span><span id="relay1_status" class="relay-status"></span>
       <button type="button" class="btn btn-lg btn-danger disabled" id="btn_relay1_off">Off</button>
       <button type="button" class="btn btn-lg btn-success disabled" id="btn_relay1_on">On</button>
-      <br><br><br>
-      Action Log:
+      <br>
+      <hr>
+      <h5>Action Log:</h5>
       <ul id="relay1_actionlog">
       </ul>
     </div>
@@ -43,14 +78,15 @@
  <div class="col-sm-6">
    <div id="relay2" class="panel panel-default">
     <div class="panel-heading">
-      <h3 class="panel-title">Output 2</h3>
+      <h3 class="panel-title">Minitioune USB Receiver</h3>
     </div>
     <div class="panel-body">
-      Current Status: <span id="relay2_status" class="relay-status"></span>
+      <span class="relay-status-label">Current Status: </span><span id="relay2_status" class="relay-status"></span>
       <button type="button" class="btn btn-lg btn-danger disabled" id="btn_relay2_off">Off</button>
       <button type="button" class="btn btn-lg btn-success disabled" id="btn_relay2_on">On</button>
-      <br><br><br>
-      Action Log:
+      <br>
+      <hr>
+      <h5>Action Log:</h5>
       <ul id="relay2_actionlog">
       </ul>
     </div>
@@ -62,17 +98,36 @@
 <script src="assets/jquery-3.1.1.min.js"></script>
 <script src="assets/bootstrap-3.3.7/js/bootstrap.min.js"></script>
 <script>
+var state_updating = true;
+var state_error = false;
+var state_updated = new Date();
+function relays_state()
+{
+    $.getJSON("api/state.lua")
+        .done(function(data)
+        {
+            update_state(data);
+        })
+        .fail(function(obj)
+        {
+            state_error = true;
+            stateTextUpdate();
+            console.log("State Update failed");
+        }
+    );
+}
 function relay_action(path)
 {
     $.getJSON("api/"+path+".lua")
         .done(function(data)
         {
-            console.log(data);
             update_state(data);
         })
         .fail(function(obj)
         {
-            console.log("failed");
+            state_error = true;
+            stateTextUpdate();
+            console.log("State Action failed");
         }
     );
 }
@@ -81,6 +136,54 @@ function iso8601ToTimestamp(iso8601)
 {
     var d = new Date(iso8601);
     return d.toLocaleDateString()+" "+d.toLocaleTimeString();
+}
+
+function formatTimeSince(secondsPast)
+{
+    if(secondsPast < 60)
+    {
+        return secondsPast + 's ago';
+    }
+    if(secondsPast < 3600)
+    {
+        return parseInt(secondsPast/60) + 'm ago';
+    }
+    return parseInt(secondsPast/3600) + 'h ago';
+}
+
+function stateTextUpdate()
+{
+    var now = new Date();
+    var seconds = parseInt((now.getTime() - state_updated.getTime()) / 1000);
+    
+    if(!state_updating && !state_error)
+    {
+        if(seconds>=30)
+        {
+            state_updating = true;
+            if(state_error)
+            {
+                state_error = false;
+                $("#state_updated").removeClass("connection-state-error");
+            }
+            $("#state_updated").text("updating..");
+            /* Update state */
+            relays_state();
+        }
+        else
+        {
+            $("#state_updated").text(formatTimeSince(seconds));
+        }
+    }
+    else if(state_error)
+    {
+        $("#state_updated").text("connection error").addClass("connection-state-error");
+    }
+}
+function stateUpdateTick()
+{
+    stateTextUpdate();
+    setTimeout(stateUpdateTick, 1000);
 }
 
 function update_state(state)
@@ -131,16 +234,20 @@ function update_state(state)
     {
         var row = e.split("|");
         var action;
+        var action_class;
         switch(row[2])
         {
             case "1":
                 action = "On";
+                action_class = "action-on";
                 break;
             case "0":
                 action = "Off";
+                action_class = "action-off";
                 break;
             case "b":
                 action = "Device Boot";
+                action_class = "action-boot";
                 break;
         }
         switch(row[1])
@@ -150,7 +257,10 @@ function update_state(state)
                 if(log_counts["1"]<log_starts["1"])
                     return;
                 $("#relay1_actionlog").prepend($("<li></li>")
-                    .text(iso8601ToTimestamp(row[0])+": "+action)
+                    .text(iso8601ToTimestamp(row[0])+": ")
+                    .append(
+                        $("<span></span>").addClass(action_class).text(action)
+                    )
                 );
                 break;
             case "2":
@@ -158,28 +268,24 @@ function update_state(state)
                 if(log_counts["2"]<log_starts["2"])                        
                     return;
                 $("#relay2_actionlog").prepend($("<li></li>")                                        
-                    .text(iso8601ToTimestamp(row[0])+": "+action)          
+                    .text(iso8601ToTimestamp(row[0])+": ")
+                    .append(
+                        $("<span></span>").addClass(action_class).text(action)
+                    )
                 );                                                                                 
                 break;
         }
     });
+    /* Update timestamp for 'state updated' text */
+    state_updated = new Date();
+    state_updating = false;
+    /* Force update */
+    stateTextUpdate();
 }
-
-
 
 $(function () {
     /* Load initial state */
-    $.getJSON("api/state.lua")
-        .done(function(data)
-        {
-            console.log(data);
-            update_state(data);
-        })
-        .fail(function(obj)
-        {
-            console.log("failed");
-        }
-    );
+    relays_state();
     
     /* Set up button handler */
     $(".btn").click(function(event)
@@ -202,6 +308,9 @@ $(function () {
             break;
       }
     });
+    
+    /* Start state loading */
+    stateUpdateTick();
 });
 </script>
 </html>
