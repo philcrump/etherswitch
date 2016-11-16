@@ -31,7 +31,7 @@ Current Version: <span id="fw-current-version">checking..</span><br>
 <button type="button" class="btn btn-lg btn-info disabled">Check for Updates</button>
 
 <h2>Device Reboot</h2>
-<button type="button" class="btn btn-lg btn-danger disabled">Reboot Device</button>
+<button type="button" id="button-reboot" class="btn btn-lg btn-danger">Reboot Device</button>
 
 </div>
 </div>
@@ -53,8 +53,27 @@ function check_fw_version()
         }
     );
 }
+function reboot_device()
+{
+    $.post("api/reboot.lua", {reboot: "reboot"})
+        .done(function(data)
+        {
+            $('#button-reboot').addClass('disabled').text('Device rebooting..');
+        })
+        .fail(function(obj)
+        {
+            $('#button-reboot').text('Device reboot failed.');
+        }
+    );
+}
 $(function () {
     check_fw_version();
+    
+    $('#button-reboot').click(function(event)
+    {
+        event.preventDefault();
+        reboot_device();
+    });
 });
 </script>
 </html>
