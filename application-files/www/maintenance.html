@@ -21,17 +21,22 @@
 <body>
 <div id="page-container" class="container">
 <div class="page-header">
-  <h1>Goonhilly #99 HAMTV Earth Station Power Control</h1>
+  <h1>Goonhilly #99 HAMTV Earth Station Power Control - Maintenance</h1>
   <a href="/">&lt;- back</a>
 </div>
 <div>
 
+<h2>Device Information</h2>
+<div id="device-info">loading</div>
+
 <h2>Device Firmware</h2>
-Current Version: <span id="fw-current-version">checking..</span><br>
-<a href="https://netswitch.philcrump.co.uk/fw/versions.txt" target="_blank">Version history</a><br>
+<b>Current Version:</b> <span id="fw-current-version">checking..</span>
+<a href="https://netswitch.philcrump.co.uk/fw/versions.txt" target="_blank">Version history</a>
+<br><br>
 <button type="button" id="button-checkfwupdate" class="btn btn-lg btn-info disabled">Check for Updates</button>
 
 <h2>Device Reboot</h2>
+<b>Device Uptime:</b> <span id="device-uptime">loading..</span>
 <button type="button" id="button-reboot" class="btn btn-lg btn-danger">Reboot Device</button>
 
 </div>
@@ -41,6 +46,50 @@ Current Version: <span id="fw-current-version">checking..</span><br>
 <script src="assets/bootstrap-3.3.7/js/bootstrap.min.js"></script>
 <script>
 var current_fw = null;
+var reboot_req_state = 0;
+function load_uptime()
+{
+    $.getJSON("api/device_uptime.lua")
+        .done(function(data)
+        {
+            $('#device-uptime').text(data.up+"s ("+((data.idle/data.up)*100)+"% idle)");
+        })
+        .fail(function(obj)
+        {
+            $('#device-uptime').text("Loading failed");
+            console.log("Loading failed");
+        }
+    );
+}
+function load_device_info()
+{
+    $.getJSON("api/device_info.lua")
+        .done(function(data)
+        {
+            var device_info_content = $('<div></div>');
+            device_info_content.append($('<b></b>').text('Device Platform: '));
+            device_info_content.append($('<span></span>').text(data.platform));
+            device_info_content.append($('<br />')).append($('<br />'));
+            device_info_content.append($('<b></b>').text('GPIO Outputs: '));
+            data.outputs.forEach(function(gpio,index)
+            {
+                index+=1;
+                device_info_content.append($('<b></b>').text('Output '+index+': '));
+                device_info_content.append($('<span></span>').text('pin '+gpio));
+                if(index!=data.outputs.length)
+                    device_info_content.append($('<span></span>').text(', '));
+                    
+            });
+            $('#device-info').empty();
+            $('#device-info').append(device_info_content);
+        })
+        .fail(function(obj)
+        {
+            $('#device-info').text("Load failed");
+            console.log("Load failed");
+        }
+    );
+}
 function check_fw_version()
 {
     $.getJSON("api/fw_version.lua")
@@ -127,6 +176,8 @@ function reboot_device()
     );
 }
 $(function () {
+    load_device_info();
+    load_uptime();
     check_fw_version();
     
     $('#button-checkfwupdate').click(function(event)
@@ -139,7 +190,25 @@ $(function () {
     $('#button-reboot').click(function(event)
     {
         event.preventDefault();
-        reboot_device();
+        switch(reboot_req_state)
+        {
+            case 0:
+                reboot_req_state = 1;
+                $('#button-reboot').addClass('disabled').text('Wait to confirm (1s)..');
+                setTimeout(function()
+                {
+                    reboot_req_state = 2;
+                    $('#button-reboot').removeClass('disabled').text('Click to confirm reboot');
+                },1000);
+                break;
+            case 1:
+                break;
+            case 2:
+                reboot_device();
+                break;
+            default:
+                reboot_req_state = 0;
+        }
     });
 });
 </script>
