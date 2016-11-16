@@ -28,7 +28,8 @@
 
 <h2>Device Firmware</h2>
 Current Version: <span id="fw-current-version">checking..</span><br>
-<button type="button" class="btn btn-lg btn-info disabled">Check for Updates</button>
+<a href="https://netswitch.philcrump.co.uk/fw/versions.txt" target="_blank">Version history</a><br>
+<button type="button" id="button-checkfwupdate" class="btn btn-lg btn-info disabled">Check for Updates</button>
 
 <h2>Device Reboot</h2>
 <button type="button" id="button-reboot" class="btn btn-lg btn-danger">Reboot Device</button>
@@ -39,17 +40,76 @@ Current Version: <span id="fw-current-version">checking..</span><br>
 <script src="assets/jquery-3.1.1.min.js"></script>
 <script src="assets/bootstrap-3.3.7/js/bootstrap.min.js"></script>
 <script>
+var current_fw = null;
 function check_fw_version()
 {
-    $.get("api/fw_version.lua")
+    $.getJSON("api/fw_version.lua")
         .done(function(data)
         {
-            $('#fw-current-version').text(data);
+            $('#fw-current-version').text(data.t+" ("+data.g+")");
+            current_fw = data;
+            $('#button-checkfwupdate').removeClass('disabled');
         })
         .fail(function(obj)
         {
             $('#fw-current-version').text("Check failed");
             console.log("Check failed");
+        }
+    );
+}
+function check_fw_updates()
+{
+    $('#button-checkfwupdate').text("Checking for firmware update..");
+    $('#button-checkfwupdate').addClass('disabled');
+    
+    $.getJSON("https://netswitch.philcrump.co.uk/fw/"+current_fw.p+"/latest.json")
+        .done(function(data)
+        {
+            if(data.g==current_fw.g)
+            {
+                $('#button-checkfwupdate').text('Up to date');
+                $('#button-checkfwupdate').removeClass('disabled');
+            }
+            else
+            {
+                $('#button-checkfwupdate')
+                    .removeClass('btn-info')
+                    .addClass('btn-success')
+                    .text('Update available - click to continue');
+                
+                $('#button-checkfwupdate').click(function(event)
+                {
+                    event.preventDefault();
+                    if($('#button-checkfwupdate').hasClass("disabled"))
+                        return;
+                    $('#button-checkfwupdate')
+                        .addClass('disabled')
+                        .text('Starting update..');
+                    update_device(data.g);
+                });
+            }
+        })
+        .fail(function(obj)
+        {
+            console.log("Check failed");
+        }
+    );
+}
+function update_device(gitref)
+{
+    $.post("api/update.lua", {update: "update", gitref: gitref})
+        .done(function(data)
+        {
+            $('#button-checkfwupdate')
+                        .text('Update started.');
+            // Start polling some json for updates??
+        })
+        .fail(function(obj)
+        {
+            $('#button-checkfwupdate')
+                .removeClass('disabled')
+                .addClass('btn-danger')
+                .text('Update failed.');
         }
     );
 }
@@ -68,6 +128,13 @@ function reboot_device()
 }
 $(function () {
     check_fw_version();
+    
+    $('#button-checkfwupdate').click(function(event)
+    {
+        event.preventDefault();
+        if(!$('#button-checkfwupdate').hasClass("disabled"))
+            check_fw_updates();
+    });
     
     $('#button-reboot').click(function(event)
     {
