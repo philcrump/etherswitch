@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="description" content="Goonhilly HAMTV Earth Station Power Control">
+<meta name="author" content="Phil Crump M0DNY">
+<title>GHY99 Power Control</title>
+<link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png">
+<link rel="icon" type="image/png" href="assets/favicon-32x32.png" sizes="32x32">
+<link rel="icon" type="image/png" href="assets/favicon-16x16.png" sizes="16x16">
+<link rel="manifest" href="assets/manifest.json">
+<link href="assets/bootstrap-3.3.7/css/bootstrap.min.css" rel="stylesheet">
+<style>
+.btn:hover, .btn:focus {                                                        
+    outline : none;                                                             
+    -moz-outline : none;                                                        
+} 
+</style>
+</head>
+<body>
+<div id="page-container" class="container">
+<div class="page-header">
+  <h1>Goonhilly #99 HAMTV Earth Station Power Control</h1>
+  <a href="/">&lt;- back</a>
+</div>
+<div>
+
+<h2>Device Firmware</h2>
+Current Version: <span id="fw-current-version">checking..</span><br>
+<button type="button" class="btn btn-lg btn-info disabled">Check for Updates</button>
+
+<h2>Device Reboot</h2>
+<button type="button" class="btn btn-lg btn-danger disabled">Reboot Device</button>
+
+</div>
+</div>
+</body>
+<script src="assets/jquery-3.1.1.min.js"></script>
+<script src="assets/bootstrap-3.3.7/js/bootstrap.min.js"></script>
+<script>
+function check_fw_version()
+{
+    $.get("api/fw_version.lua")
+        .done(function(data)
+        {
+            $('#fw-current-version').text(data);
+        })
+        .fail(function(obj)
+        {
+            $('#fw-current-version').text("Check failed");
+            console.log("Check failed");
+        }
+    );
+}
+$(function () {
+    check_fw_version();
+});
+</script>
+</html>

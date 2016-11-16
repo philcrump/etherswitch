@@ -5,7 +5,7 @@ local hex_to_char = function(x)
 end                                                                                           
                                                                                               
 local unescape = function(url)                                                                
-  return url:gsub("%%(%x%x)", hex_to_char)                                                    
+  return url:gsub("%%(%x%x)", hex_to_char):gsub("+", " ")                                                    
 end                                                                                           
                           
 -- eg. url_getquery(os.getenv("QUERY_STRING"))

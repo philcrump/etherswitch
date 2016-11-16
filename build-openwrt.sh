@@ -30,14 +30,17 @@ done
 
 # Add Build config
 cp $BASE_DIR/ledeconfig-diff $LEDE_DIR/.config;
-cd $LEDE_DIR/;
-make defconfig;
+
+timestamp=$(date +"%Y-%m-%d-%H%M")
+gitref=$(git describe --dirty --always)
+echo "$timestamp ($gitref)" > "$LEDE_DIR/files/etc/version"
 
 # Compile!
+cd $LEDE_DIR/;
+make defconfig;
 make -j 4 V=s;
 
 # Copy out compiled fw image
-timestamp=$(date +"%Y-%m-%d-%H%M")
-cp -fv ${LEDE_DIR}/bin/targets/ar71xx/generic/lede-ar71xx-generic-gl-ar150-squashfs-sysupgrade.bin ${BASE_DIR}/lede-ghy99-switch-$timestamp.bin
+cp -fv ${LEDE_DIR}/bin/targets/ar71xx/generic/lede-ar71xx-generic-gl-ar150-squashfs-sysupgrade.bin ${BASE_DIR}/lede-ghy99-switch-$timestamp-$gitref.bin
 
 echo "Done!"

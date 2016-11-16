@@ -53,12 +53,16 @@
     padding-left: 0.3em;
     border-radius: .25em;
 }
+.panel-title-editbox {
+    display: none;
+}
 </style>
 </head>
 <body>
 <div id="page-container" class="container">
 <div class="page-header">
   <h1>Goonhilly #99 HAMTV Earth Station Power Control</h1>
+  <a href="maintenance.html" class="pull-right">Maintenance Functions</a>
   Last updated: <span id="state_updated">updating..</span>
 </div>
 </div>
@@ -70,9 +74,13 @@ var page_initialised = false;
 var state_updating = true;
 var state_error = false;
 var state_updated = new Date();
+var update_lock = false;
 
 function update_state()
 {
+    if(update_lock)
+        return;
+    
     $.getJSON("api/state.json")
         .done(function(data)
         {
@@ -109,8 +117,8 @@ function gpio_rename(output, name, cb)
     $.post("api/rename.lua", {"output": output, "name": name })
         .done(function(data)
         {
+            cb();
             page_update(JSON.parse(data));
-            cb(output, name);
         })
         .fail(function(obj)
         {
@@ -198,13 +206,21 @@ function page_init(data)
           .attr('class', 'panel-heading');
         panel_heading.append($('<button></button>')
                                 .attr('type','button')
+                                .attr('id','button-edit-gpio-'+gpio_index)
                                 .attr('class', 'btn btn-default btn-xs pull-right')
                                 .append($("<span></span>")
                                     .attr('class', 'glyphicon glyphicon-pencil')
                                 )
                              );
         panel_heading.append($('<h3></h3>')
+                                .attr('id','title-gpio-'+gpio_index)
                                 .attr('class', 'panel-title')
+                                .text(gpio.name)
+                             );
+        panel_heading.append($('<input></input>')
+                                .attr('type', 'text')
+                                .attr('id','title-editbox-gpio-'+gpio_index)
+                                .attr('class', 'panel-title-editbox')
                                 .text(gpio.name)
                              );
         panel.append(panel_heading);
@@ -259,6 +275,28 @@ function page_init(data)
             if(!$('#button-on-gpio-'+gpio_index).hasClass("disabled"))
                 gpio_action(gpio_index, 1);
         });
+        
+        $('#button-edit-gpio-'+gpio_index).click(function(event)
+        {
+            event.preventDefault();
+            
+            if($('#title-gpio-'+gpio_index).is(":visible"))
+            {
+                update_lock = true;
+                $('#title-gpio-'+gpio_index).hide();
+                $('#title-editbox-gpio-'+gpio_index).show()
+                    .val($('#title-gpio-'+gpio_index).text());
+            }
+            else
+            {
+                gpio_rename(gpio_index, $('#title-editbox-gpio-'+gpio_index).val(), function()
+                {
+                    $('#title-gpio-'+gpio_index).show();
+                    $('#title-editbox-gpio-'+gpio_index).hide();
+                    update_lock = false;
+                });
+            }
+        });
     });
     
     page_initialised = true;
@@ -269,6 +307,9 @@ function page_update(data)
     data["gpio"].forEach(function(gpio, gpio_index)
     {
         gpio_index+=1;
+        
+        $('#title-gpio-'+gpio_index).text(gpio.name);
+        
         if(gpio.state == 0)
         {
             $('#panel-gpio-'+gpio_index).removeClass("panel-success").addClass("panel-danger");
