@@ -23,10 +23,12 @@ fi
 cp -rv $BASE_DIR/application-files $LEDE_DIR/files/;
 
 # Apply application patches
-for patchfile in $BASE_DIR/application-patches/*
+IFS=$'\n'
+for patchfile in `ls -1 $BASE_DIR/application-patches/`
 do
   patch -p0 -d ${LEDE_DIR}/ < $patchfile
 done
+unset IFS
 
 # Add Build config
 cp $BASE_DIR/ledeconfig-diff $LEDE_DIR/.config;
