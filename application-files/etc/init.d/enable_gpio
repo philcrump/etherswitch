@@ -3,5 +3,5 @@
 START=90
  
 boot() {        
-        /usr/bin/lua /www/api/outputs_init.lua
+        /usr/bin/lua /etc/boot.lua
 }

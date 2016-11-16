@@ -1,14 +1,24 @@
 #!/usr/bin/lua
 
-state_filename="/www/api/output_state.json"
+package.path = package.path .. ";" .. "/www/api/?.lua"
+require("libproduct")
+
+state_filename="/www/api/state.json"
 
 JSON = (loadfile "/www/api/libjson.lua")()
 
-state_init = {}
-state_init["1"] = 0;
-state_init["2"] = 0;
-state_init["log"] = {};
-
+function state_init()
+    local state = {};
+    state["gpio"] = {};
+    for index, address in ipairs(product_info().outputs)
+    do
+        state["gpio"][index] = {}
+        state["gpio"][index]["state"] = 0;
+        state["gpio"][index]["name"] = "Output " .. index;
+        state["gpio"][index]["log"] = {};
+    end
+    return state
+end
 
 function state_fileexists()
    local f = io.open(state_filename, "r")
@@ -25,7 +35,7 @@ function state_readjson()
     -- Create file if not exists
     if not state_fileexists()
     then
-        state_writejson(JSON:encode(state_init))
+        state_writejson(JSON:encode(state_init()))
     end
     local f = io.open(state_filename, "r")
     local json = f:read()
@@ -33,15 +43,28 @@ function state_readjson()
     return json
 end
 
-function state_update(output, state)
+function state_rename(output, name)
     local old_state = JSON:decode(state_readjson())
     local new_state = old_state
-    if old_state[tostring(output)] == state
+    if old_state["gpio"][output]["name"] == name
     then
         return false
     else
-        new_state[tostring(output)] = state
-        table.insert(new_state["log"], os.date("!%Y-%m-%dT%TZ") .. "|" .. tostring(output) .. "|" .. tostring(state))
+        new_state["gpio"][output]["name"] = name
+        state_writejson(JSON:encode(new_state))
+        return true
+    end
+end
+
+function state_update(output, state)
+    local old_state = JSON:decode(state_readjson())
+    local new_state = old_state
+    if old_state["gpio"][output]["state"] == state
+    then
+        return false
+    else
+        new_state["gpio"][output]["state"] = state
+        table.insert(new_state["gpio"][output]["log"], {t=os.date("!%Y-%m-%dT%TZ"), d=state} )
         state_writejson(JSON:encode(new_state))
         return true
     end
@@ -49,7 +72,8 @@ end
         
 function state_read(output)
     local state = JSON:decode(state_readjson())
-    if state[tostring(output)] == 1
+    print(output)
+    if state["gpio"][output]["state"] == 1
     then
         return true
     else
@@ -59,7 +83,9 @@ end
 
 function state_writeboot()
     local state = JSON:decode(state_readjson())
-    table.insert(state["log"], os.date("!%Y-%m-%dT%TZ") .. "|1|" .. "b")
-    table.insert(state["log"], os.date("!%Y-%m-%dT%TZ") .. "|2|" .. "b")
+    for index, address in ipairs(state["gpio"])
+    do
+        table.insert(state["gpio"][index]["log"], {t=os.date("!%Y-%m-%dT%TZ"), d="b"} )
+    end
     state_writejson(JSON:encode(state)) 
 end
