@@ -27,7 +27,7 @@ end
 
 function state_writejson(json)
     local f = io.open(state_filename, "w+")
-    local json = f:write(json)
+    json = f:write(json)
     f:close()
 end
 
