@@ -43,6 +43,6 @@ make defconfig;
 make -j 4 V=s;
 
 # Copy out compiled fw image
-cp -fv ${LEDE_DIR}/bin/targets/ar71xx/generic/lede-ar71xx-generic-gl-ar150-squashfs-sysupgrade.bin ${BASE_DIR}/lede-ghy99-switch-$timestamp-$gitref.bin
+cp -fv ${LEDE_DIR}/bin/targets/ar71xx/generic/lede-ar71xx-generic-gl-ar150-squashfs-sysupgrade.bin ${BASE_DIR}/$gitref.bin
 
 echo "Done!"
