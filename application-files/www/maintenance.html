@@ -15,7 +15,10 @@
 .btn:hover, .btn:focus {                                                        
     outline : none;                                                             
     -moz-outline : none;                                                        
-} 
+}
+#textbox-fwupgrade-progress {
+    /* display: none; */
+}
 </style>
 </head>
 <body>
@@ -34,6 +37,9 @@
 <a href="https://netswitch.philcrump.co.uk/fw/versions.txt" target="_blank">Version history</a>
 <br><br>
 <button type="button" id="button-checkfwupdate" class="btn btn-lg btn-info disabled">Check for Updates</button>
+<textarea id="textbox-fwupgrade-progress" rows="6" cols="50">
+Test.... 
+</textarea>
 
 <h2>Device Reboot</h2>
 <b>Device Uptime:</b> <span id="device-uptime">loading..</span>
@@ -111,7 +117,7 @@ function check_fw_updates()
     $('#button-checkfwupdate').text("Checking for firmware update..");
     $('#button-checkfwupdate').addClass('disabled');
     
-    $.getJSON("https://netswitch.philcrump.co.uk/fw/"+current_fw.p+"/latest.json")
+    $.getJSON("https://netswitch.philcrump.co.uk/fw/ghy99/latest.json")
         .done(function(data)
         {
             if(data.g==current_fw.g)
@@ -146,12 +152,15 @@ function check_fw_updates()
 }
 function update_device(gitref)
 {
-    $.post("api/update.lua", {update: "update", gitref: gitref})
+    $.post("api/upgrade.lua", {update: "update", gitref: gitref})
         .done(function(data)
         {
             $('#button-checkfwupdate')
-                        .text('Update started.');
-            // Start polling some json for updates??
+              .text('Update started.');
+            
+            $('#button-checkfwupdate').hide();
+            $("#textbox-fwupgrade-progress").show();
+            follow_update();
         })
         .fail(function(obj)
         {
@@ -162,6 +171,24 @@ function update_device(gitref)
         }
     );
 }
+function follow_update()
+{
+    $.getJSON("api/upgrade_state.json")
+        .done(function(data)
+        {
+            $("#textbox-fwupgrade-progress").text(data.log);
+            if(data.aborted==0)
+            {
+                setTimeout(follow_update, 1000);
+            }
+        })
+        .fail(function(obj)
+        {
+            console.log("Check failed");
+        }
+    );
+}
+
 function reboot_device()
 {
     $.post("api/reboot.lua", {reboot: "reboot"})
