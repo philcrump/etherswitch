@@ -3,9 +3,11 @@
 BASE_DIR=$(pwd)"/"$(dirname "$0")
 LEDE_DIR="${BASE_DIR}/lede"
 
+rm -fv $LEDE_DIR
+
 if [ ! -d "$LEDE_DIR" ]; then
     # Install dependencies
-    sudo apt-get install -y git-core build-essential libssl-dev libncurses5-dev unzip gawk;
+    sudo apt-get install -y git-core build-essential libssl-dev libncurses5-dev unzip gawk python2.7;
     # Clone upstream source
     git clone https://git.lede-project.org/source.git $LEDE_DIR/;
 else
@@ -26,7 +28,7 @@ cp -rv $BASE_DIR/application-files $LEDE_DIR/files/;
 IFS=$'\n'
 for patchfile in `ls -1 $BASE_DIR/application-patches/`
 do
-  patch -p0 -d ${LEDE_DIR}/ < $patchfile
+  patch -p0 -d ${LEDE_DIR}/ < $BASE_DIR/application-patches/$patchfile
 done
 unset IFS
 
@@ -40,7 +42,7 @@ echo "{\"p\":\"ghy99\",\"t\":\"$timestamp\",\"g\":\"$gitref\"}" > "$LEDE_DIR/fil
 # Compile!
 cd $LEDE_DIR/;
 make defconfig;
-make -j 4 V=s;
+ionice -c 3 nice -n19 make -j`nproc` V=s;
 
 # Copy out compiled fw image
 cp -fv ${LEDE_DIR}/bin/targets/ar71xx/generic/lede-ar71xx-generic-gl-ar150-squashfs-sysupgrade.bin ${BASE_DIR}/$gitref.bin
