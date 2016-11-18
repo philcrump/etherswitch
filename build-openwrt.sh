@@ -3,7 +3,7 @@
 BASE_DIR=$(dirname "$0")
 LEDE_DIR="${BASE_DIR}/lede"
 
-rm -fv $LEDE_DIR
+rm -frv $LEDE_DIR
 
 if [ ! -d "$LEDE_DIR" ]; then
     # Install dependencies
