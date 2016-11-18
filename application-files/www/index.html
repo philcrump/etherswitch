@@ -96,11 +96,12 @@ function update_state()
         }
     );
 }
-function gpio_action(output, action)
+function gpio_action(output, action, cb)
 {
     $.post("api/action.lua", {"output": output, "action": action })
         .done(function(data)
         {
+            cb();
             page_update(JSON.parse(data));
         })
         .fail(function(obj)
@@ -267,13 +268,21 @@ function page_init(data)
         {
             event.preventDefault();
             if(!$('#button-off-gpio-'+gpio_index).hasClass("disabled"))
-                gpio_action(gpio_index, 0);
+                $('#button-off-gpio-'+gpio_index).addClass("disabled");
+                gpio_action(gpio_index, 0, function()
+                {
+                    $('#button-off-gpio-'+gpio_index).removeClass("disabled");
+                });
         });
         $('#button-on-gpio-'+gpio_index).click(function(event)
         {
             event.preventDefault();
             if(!$('#button-on-gpio-'+gpio_index).hasClass("disabled"))
-                gpio_action(gpio_index, 1);
+                $('#button-on-gpio-'+gpio_index).addClass("disabled");
+                gpio_action(gpio_index, 1, function()
+                {
+                    $('#button-on-gpio-'+gpio_index).removeClass("disabled");
+                });
         });
         
         $('#button-edit-gpio-'+gpio_index).click(function(event)

@@ -35,7 +35,7 @@ cp $BASE_DIR/ledeconfig-diff $LEDE_DIR/.config;
 
 timestamp=$(date +"%Y-%m-%d-%H%M")
 gitref=$(git describe --dirty --always)
-echo "{'p':'ar150','t':'$timestamp','g':'$gitref'}" > "$LEDE_DIR/files/etc/version"
+echo "{\"p\":\"ghy99\",\"t\":\"$timestamp\",\"g\":\"$gitref\"}" > "$LEDE_DIR/files/etc/version"
 
 # Compile!
 cd $LEDE_DIR/;

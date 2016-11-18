@@ -10,7 +10,7 @@ function progress_update(logstring, aborted)
   upgrade_progress["log"] = upgrade_progress["log"] .. logstring .. "\n"
   upgrade_progress["aborted"] = aborted
   local f = io.open("/www/api/upgrade_state.json", "w+")
-  f:write(JSON:encode(object))
+  f:write(JSON:encode(upgrade_progress))
   f:close()
 end
 
@@ -18,7 +18,7 @@ local wantedgit = arg[1]
 
 if wantedgit == nil or wantedgit == ''
 then
-  print("Error - no gitref passed to script (Usage: upgrade.lua [gitref])
+  print("Error - no gitref passed to script (Usage: upgrade.lua [gitref])")
   progress_update("No gitref passed to script",1)
   os.exit()
 end

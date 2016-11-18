@@ -17,7 +17,7 @@
     -moz-outline : none;                                                        
 }
 #textbox-fwupgrade-progress {
-    /* display: none; */
+    display: none;
 }
 </style>
 </head>
@@ -33,16 +33,16 @@
 <div id="device-info">loading</div>
 
 <h2>Device Firmware</h2>
+<a href="https://netswitch.philcrump.co.uk/fw/ghy99/versions.txt" target="_blank">Version history</a>
+<br>
 <b>Current Version:</b> <span id="fw-current-version">checking..</span>
-<a href="https://netswitch.philcrump.co.uk/fw/versions.txt" target="_blank">Version history</a>
 <br><br>
 <button type="button" id="button-checkfwupdate" class="btn btn-lg btn-info disabled">Check for Updates</button>
-<textarea id="textbox-fwupgrade-progress" rows="6" cols="50">
-Test.... 
-</textarea>
+<textarea id="textbox-fwupgrade-progress" rows="6" cols="50"></textarea>
 
 <h2>Device Reboot</h2>
 <b>Device Uptime:</b> <span id="device-uptime">loading..</span>
+<br><br>
 <button type="button" id="button-reboot" class="btn btn-lg btn-danger">Reboot Device</button>
 
 </div>
@@ -52,13 +52,16 @@ Test....
 <script src="assets/bootstrap-3.3.7/js/bootstrap.min.js"></script>
 <script>
 var current_fw = null;
+var new_fw = null;
 var reboot_req_state = 0;
+var upgrade_req_state = 0;
 function load_uptime()
 {
     $.getJSON("api/device_uptime.lua")
         .done(function(data)
         {
-            $('#device-uptime').text(data.up+"s ("+((data.idle/data.up)*100)+"% idle)");
+            var idle_percent = Math.round((data.idle/data.up)*100);
+            $('#device-uptime').text(descTime(data.up)+"("+idle_percent+"% idle)");
         })
         .fail(function(obj)
         {
@@ -77,15 +80,16 @@ function load_device_info()
             device_info_content.append($('<span></span>').text(data.platform));
             device_info_content.append($('<br />')).append($('<br />'));
             device_info_content.append($('<b></b>').text('GPIO Outputs: '));
+            var device_outputs = $('<ul></ul>');
             data.outputs.forEach(function(gpio,index)
             {
                 index+=1;
-                device_info_content.append($('<b></b>').text('Output '+index+': '));
-                device_info_content.append($('<span></span>').text('pin '+gpio));
-                if(index!=data.outputs.length)
-                    device_info_content.append($('<span></span>').text(', '));
-                    
+                device_outputs.append($('<li></li>')
+                                        .append($('<b></b>').text('Output '+index+': '))
+                                        .append($('<span></span>').text('pin '+gpio))
+                                    );
             });
+            device_info_content.append(device_outputs);
             $('#device-info').empty();
             $('#device-info').append(device_info_content);
         })
@@ -117,31 +121,24 @@ function check_fw_updates()
     $('#button-checkfwupdate').text("Checking for firmware update..");
     $('#button-checkfwupdate').addClass('disabled');
     
-    $.getJSON("https://netswitch.philcrump.co.uk/fw/ghy99/latest.json")
+    $.get("https://netswitch.philcrump.co.uk/fw/"+current_fw.p+"/latest")
         .done(function(data)
         {
-            if(data.g==current_fw.g)
+            if(data==current_fw.g)
             {
                 $('#button-checkfwupdate').text('Up to date');
                 $('#button-checkfwupdate').removeClass('disabled');
+                upgrade_req_state = 0;
             }
             else
             {
                 $('#button-checkfwupdate')
+                    .removeClass('disabled')
                     .removeClass('btn-info')
                     .addClass('btn-success')
                     .text('Update available - click to continue');
-                
-                $('#button-checkfwupdate').click(function(event)
-                {
-                    event.preventDefault();
-                    if($('#button-checkfwupdate').hasClass("disabled"))
-                        return;
-                    $('#button-checkfwupdate')
-                        .addClass('disabled')
-                        .text('Starting update..');
-                    update_device(data.g);
-                });
+                new_fw = data;
+                upgrade_req_state = 2;
             }
         })
         .fail(function(obj)
@@ -150,9 +147,16 @@ function check_fw_updates()
         }
     );
 }
-function update_device(gitref)
+function upgrade_device()
 {
-    $.post("api/upgrade.lua", {update: "update", gitref: gitref})
+    if(new_fw==null)
+        return;
+
+    $('#button-checkfwupdate')
+        .addClass('disabled')
+        .text('Starting update..');
+    
+    $.post("api/upgrade.lua", {upgrade: "upgrade", gitref: new_fw})
         .done(function(data)
         {
             $('#button-checkfwupdate')
@@ -160,7 +164,7 @@ function update_device(gitref)
             
             $('#button-checkfwupdate').hide();
             $("#textbox-fwupgrade-progress").show();
-            follow_update();
+            follow_upgrade();
         })
         .fail(function(obj)
         {
@@ -168,23 +172,36 @@ function update_device(gitref)
                 .removeClass('disabled')
                 .addClass('btn-danger')
                 .text('Update failed.');
+            upgrade_req_state = 0;
         }
     );
 }
-function follow_update()
+var upgrade_started = false;
+function follow_upgrade()
 {
     $.getJSON("api/upgrade_state.json")
         .done(function(data)
         {
+            if(data==null)
+            {
+                setTimeout(follow_upgrade, 200);
+                return;
+            }
+            upgrade_started = true;
             $("#textbox-fwupgrade-progress").text(data.log);
             if(data.aborted==0)
             {
-                setTimeout(follow_update, 1000);
+                setTimeout(follow_upgrade, 200);
             }
         })
         .fail(function(obj)
         {
+            if(!upgrade_started)
+            {
+                $("#textbox-fwupgrade-progress").text("Waiting for upgrade to begin..");
+            }
             console.log("Check failed");
+            setTimeout(follow_upgrade, 200);
         }
     );
 }
@@ -202,6 +219,7 @@ function reboot_device()
         }
     );
 }
+
 $(function () {
     load_device_info();
     load_uptime();
@@ -210,8 +228,23 @@ $(function () {
     $('#button-checkfwupdate').click(function(event)
     {
         event.preventDefault();
-        if(!$('#button-checkfwupdate').hasClass("disabled"))
-            check_fw_updates();
+        switch(upgrade_req_state)
+        {
+            case 0:
+                upgrade_req_state = 1;
+                check_fw_updates();
+                break;
+            case 1:
+                break;
+            case 2:
+                upgrade_req_state = 3;
+                upgrade_device();
+                break;
+            case 3:
+                break;
+            default:
+                break;
+         }
     });
     
     $('#button-reboot').click(function(event)
@@ -238,5 +271,35 @@ $(function () {
         }
     });
 });
+
+function descTime(seconds) {
+    var descString = "";
+    
+    if(seconds>31536000)
+    {
+        descString = Math.floor(seconds/31536000)+"y, "
+        seconds = seconds - (Math.floor(seconds/31536000)*31536000);
+    }
+    
+    if(seconds>2592000)
+    {
+        descString = descString + Math.floor(seconds/2592000)+"m, "
+        seconds = seconds - (Math.floor(seconds/2592000)*2592000);
+    }
+    
+    if(seconds>86400)
+    {
+        descString = descString + Math.floor(seconds/86400)+"d, "
+        seconds = seconds - (Math.floor(seconds/86400)*86400);
+    }
+    
+    if(seconds>3600)
+    {
+        descString = descString + Math.floor(seconds/3600)+"h, "
+        seconds = seconds - (Math.floor(seconds/3600)*3600);
+    }
+    
+    return descString + Math.floor(seconds/60)+"m ";
+}
 </script>
 </html>

@@ -4,8 +4,6 @@ package.path = package.path .. ";" .. "/www/api/?.lua"
 require("libgpio")
 require("libstate")
 
-state_filename="/www/api/output_state.json"
-
 product_file="/etc/product.json"
 
 JSON = (loadfile "/www/api/libjson.lua")()
@@ -17,8 +15,6 @@ function product_info()
     f:close()
     return JSON:decode(json)
 end
-
-local product = product_info()
 
 for index, address in ipairs(product_info().outputs) do
     gpio_init(address)
