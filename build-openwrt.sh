@@ -1,6 +1,6 @@
 #!/bin/bash
 
-BASE_DIR=$(pwd)"/"$(dirname "$0")
+BASE_DIR=$(dirname "$0")
 LEDE_DIR="${BASE_DIR}/lede"
 
 rm -fv $LEDE_DIR
