@@ -36,6 +36,7 @@ unset IFS
 # Add Build config
 cp $BASE_DIR/ledeconfig-diff $LEDE_DIR/.config;
 
+cd $LEDE_DIR/;
 timestamp=$(date +"%Y-%m-%d-%H%M")
 gitref=$(git describe --dirty --always)
 echo "{\"p\":\"ghy99\",\"t\":\"$timestamp\",\"g\":\"$gitref\"}" > "$LEDE_DIR/files/etc/version"

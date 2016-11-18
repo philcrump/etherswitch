@@ -33,13 +33,18 @@ md5sum $image_file > $checksum_file
 
 echo "Copying files"
 cp -v $image_file $target_dir/
-cp -v $image_checksum $target_dir/
+cp -v $checksum_file $target_dir/
+
+if [ ! -f "$target_dir/versions.txt" ]
+then
+  touch "$target_dir/versions.txt"
+fi
 
 echo "Type a release comment, followed by [ENTER]:"
 read image_comment
 
 timestamp=$(date +"%Y-%m-%d-%H%M")
-echo -e "$timestamp - $gitref\n - $image_comment\n\n$(cat $target_dir/versions.txt)" > $target_dir/versions.txt
+echo -e "$timestamp - $gitref\n - $image_comment\n\n$(cat $target_dir/versions.txt)" >> $target_dir/versions.txt
 
 echo "Updating latest ref"
 echo "$gitref" > $target_dir/latest
