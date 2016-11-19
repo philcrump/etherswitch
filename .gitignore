@@ -1,3 +1,4 @@
 lede/
-lede-*.bin
+*.bin
+*.md5
 application-files/www/api/output_state.json
