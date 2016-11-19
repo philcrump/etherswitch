@@ -3,10 +3,10 @@
 package.path = package.path .. ";" .. "/www/api/?.lua"
 require("libproduct")
 
-state_filename="/www/api/state.json"
+state_filename="/etc/gpio-state.json"
 
 JSON = (loadfile "/www/api/libjson.lua")()
-
+:
 function state_init()
     local state = {};
     state["gpio"] = {};
