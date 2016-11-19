@@ -11,10 +11,11 @@ then
     os.exit()
 end
 
+print("\r\n")
+
 if(tostring(vars["upgrade"])=="upgrade")
 then
-    print("\r\nSuccess")
-    os.execute("/etc/upgrade.lua " .. vars["gitref"] .. " &")
+    os.execute("/etc/upgrade.lua " .. vars["gitref"])
 else
-    print("\r\nError")
+    print("Error")
 end

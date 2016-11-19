@@ -33,16 +33,16 @@
 <div id="device-info">loading</div>
 
 <h2>Device Firmware</h2>
-<a href="https://netswitch.philcrump.co.uk/fw/ghy99/versions.txt" target="_blank">Version history</a>
-<br>
-<b>Current Version:</b> <span id="fw-current-version">checking..</span>
+<b><a href="https://netswitch.philcrump.co.uk/fw/ghy99/versions.txt" target="_blank">Current Version</a>:</b> <span id="fw-current-version">checking..</span>
 <br><br>
 <button type="button" id="button-checkfwupdate" class="btn btn-lg btn-info disabled">Check for Updates</button>
 <textarea id="textbox-fwupgrade-progress" rows="6" cols="50"></textarea>
 
 <h2>Device Reboot</h2>
-<b>Device Uptime:</b> <span id="device-uptime">loading..</span>
-<br><br>
+<b>Device Uptime:</b> <span id="device-uptime"></span><br>
+<b>Device Memory:</b> <span id="device-ram"></span><br>
+<b>Device Disk:</b> <span id="device-udisk"></span><br>
+<br>
 <button type="button" id="button-reboot" class="btn btn-lg btn-danger">Reboot Device</button>
 
 </div>
@@ -57,11 +57,15 @@ var reboot_req_state = 0;
 var upgrade_req_state = 0;
 function load_uptime()
 {
-    $.getJSON("api/device_uptime.lua")
+    $.getJSON("api/device_stats.lua")
         .done(function(data)
         {
             var idle_percent = Math.round((data.idle/data.up)*100);
+            var ram_percent = Math.round((data.ram_free/data.ram_size)*100);
+            var disk_percent = Math.round((data.disk_free/data.ram_size)*100);
             $('#device-uptime').text(descTime(data.up)+"("+idle_percent+"% idle)");
+            $('#device-ram').text(Math.round((data.ram_size/1024)*10)/10+"MB ("+ram_percent+"% free)");
+            $('#device-disk').text(Math.round((data.disk_size/(1024*1024))*10)/10+"MB ("+disk_percent+"% free)");
         })
         .fail(function(obj)
         {
@@ -124,6 +128,7 @@ function check_fw_updates()
     $.get("https://netswitch.philcrump.co.uk/fw/"+current_fw.p+"/latest")
         .done(function(data)
         {
+            data = data.trim();
             if(data==current_fw.g)
             {
                 $('#button-checkfwupdate').text('Up to date');
@@ -159,12 +164,9 @@ function upgrade_device()
     $.post("api/upgrade.lua", {upgrade: "upgrade", gitref: new_fw})
         .done(function(data)
         {
-            $('#button-checkfwupdate')
-              .text('Update started.');
-            
+            data = data.trim();
             $('#button-checkfwupdate').hide();
-            $("#textbox-fwupgrade-progress").show();
-            follow_upgrade();
+            $("#textbox-fwupgrade-progress").show().text(data);
         })
         .fail(function(obj)
         {
@@ -176,36 +178,6 @@ function upgrade_device()
         }
     );
 }
-var upgrade_started = false;
-function follow_upgrade()
-{
-    $.getJSON("api/upgrade_state.json")
-        .done(function(data)
-        {
-            if(data==null)
-            {
-                setTimeout(follow_upgrade, 200);
-                return;
-            }
-            upgrade_started = true;
-            $("#textbox-fwupgrade-progress").text(data.log);
-            if(data.aborted==0)
-            {
-                setTimeout(follow_upgrade, 200);
-            }
-        })
-        .fail(function(obj)
-        {
-            if(!upgrade_started)
-            {
-                $("#textbox-fwupgrade-progress").text("Waiting for upgrade to begin..");
-            }
-            console.log("Check failed");
-            setTimeout(follow_upgrade, 200);
-        }
-    );
-}
-
 function reboot_device()
 {
     $.post("api/reboot.lua", {reboot: "reboot"})
