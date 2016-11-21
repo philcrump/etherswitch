@@ -1,8 +1,9 @@
 #!/usr/bin/lua
 
---
-
 local wantedgit = arg[1]
+
+-- Remove all non-alphanumeric (prevent command injection)
+wantedgit = wantedgit:gsub('%W','')
 
 if wantedgit == nil or wantedgit == ''
 then
@@ -29,7 +30,7 @@ else
 end
 
 -- Verify FW Checksum
-if 0 == os.execute("cd /tmp && md5sum -c " .. wantedgit .. ".md5")
+if 0 == os.execute("cd /tmp && md5sum -c '" .. wantedgit .. ".md5'")
 then
   print("md5sum Check OK")
 else
@@ -38,7 +39,7 @@ else
 end
 
 -- Flash FW and reboot!
-if 0 == os.execute("cd /tmp && sysupgrade -v /tmp/".. wantedgit .. ".bin")
+if 0 == os.execute("cd /tmp && sysupgrade -v '/tmp/".. wantedgit .. ".bin'")
 then
   -- Probably rebooted by now
   print("FW Upgrade OK")
