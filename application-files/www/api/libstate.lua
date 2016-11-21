@@ -6,7 +6,7 @@ require("libproduct")
 state_filename="/etc/gpio-state.json"
 
 JSON = (loadfile "/www/api/libjson.lua")()
-:
+
 function state_init()
     local state = {};
     state["gpio"] = {};
