@@ -12,7 +12,7 @@ then
 end
 
 -- Download FW Image
-if 0 == os.execute("cd /tmp && wget 'https://netswitch.philcrump.co.uk/fw/ghy99/" .. wantedgit .. ".bin'")
+if 0 == os.execute("cd /tmp && wget -q 'https://netswitch.philcrump.co.uk/fw/ghy99/" .. wantedgit .. ".bin'")
 then
   print("Image Download OK")
 else
@@ -21,7 +21,7 @@ else
 end
 
 -- Download FW Checksum
-if 0 == os.execute("cd /tmp && wget 'https://netswitch.philcrump.co.uk/fw/ghy99/" .. wantedgit .. ".md5'")
+if 0 == os.execute("cd /tmp && wget -q 'https://netswitch.philcrump.co.uk/fw/ghy99/" .. wantedgit .. ".md5'")
 then
   print("md5sum Download OK")
 else
@@ -30,7 +30,7 @@ else
 end
 
 -- Verify FW Checksum
-if 0 == os.execute("cd /tmp && md5sum -c '" .. wantedgit .. ".md5'")
+if 0 == os.execute("cd /tmp && md5sum -s -c '" .. wantedgit .. ".md5'")
 then
   print("md5sum Check OK")
 else
@@ -39,7 +39,7 @@ else
 end
 
 -- Flash FW and reboot!
-if 0 == os.execute("cd /tmp && sysupgrade -v '/tmp/".. wantedgit .. ".bin'")
+if 0 == os.execute("cd /tmp && sysupgrade -q -v '/tmp/".. wantedgit .. ".bin'")
 then
   -- Probably rebooted by now
   print("FW Upgrade OK")

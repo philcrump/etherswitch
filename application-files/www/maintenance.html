@@ -16,9 +16,6 @@
     outline : none;                                                             
     -moz-outline : none;                                                        
 }
-#textbox-fwupgrade-progress {
-    display: none;
-}
 </style>
 </head>
 <body>
@@ -36,7 +33,6 @@
 <b><a href="https://netswitch.philcrump.co.uk/fw/ghy99/versions.txt" target="_blank">Current Version</a>:</b> <span id="fw-current-version">checking..</span>
 <br><br>
 <button type="button" id="button-checkfwupdate" class="btn btn-lg btn-info disabled">Check for Updates</button>
-<textarea id="textbox-fwupgrade-progress" rows="6" cols="50"></textarea>
 
 <h2>Device Stats</h2>
 <b>Device Uptime:</b> <span id="device-uptime"></span><br>
@@ -159,14 +155,25 @@ function upgrade_device()
 
     $('#button-checkfwupdate')
         .addClass('disabled')
-        .text('Starting update..');
+        .text('Upgrading firmware..');
     
     $.post("api/upgrade.lua", {upgrade: "upgrade", gitref: new_fw})
         .done(function(data)
         {
-            data = data.trim();
-            $('#button-checkfwupdate').hide();
-            $("#textbox-fwupgrade-progress").show().text(data);
+            data = JSON.parse(data);
+            if(data.success==1)
+            {
+                $('#button-checkfwupdate')
+                    .text('Upgrade Successful - device rebooting..');
+            }
+            else
+            {
+                $('#button-checkfwupdate')
+                    .removeClass('disabled')
+                    .addClass('btn-danger')
+                    .text('Upgrade failed.');
+                console.log(data.message);
+            } 
         })
         .fail(function(obj)
         {
