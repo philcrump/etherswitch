@@ -44,7 +44,7 @@ echo "Type a release comment, followed by [ENTER]:"
 read image_comment
 
 timestamp=$(date +"%Y-%m-%d-%H%M")
-echo -e "$timestamp - $gitref\n - $image_comment\n\n$(cat $target_dir/versions.txt)" >> $target_dir/versions.txt
+echo -e "$timestamp - $gitref\n - $image_comment\n\n$(cat $target_dir/versions.txt)" > $target_dir/versions.txt
 
 echo "Updating latest ref"
 echo "$gitref" > $target_dir/latest
