@@ -41,7 +41,7 @@ gitref=$(cd $BASE_DIR && git describe --dirty --always)
 echo "{\"p\":\"ghy99\",\"t\":\"$timestamp\",\"g\":\"$gitref\"}" > "$LEDE_DIR/files/etc/version"
 
 # Compile!
-cd $LEDE_DIR/;
+cd $LEDE_DIR/
 make defconfig;
 ionice -c 3 nice -n19 make -j`nproc` V=s;
 
