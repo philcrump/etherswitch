@@ -1,6 +1,7 @@
 #!/bin/bash
 
-BASE_DIR=$(dirname "$0")
+BASE_DIR="$(cd $(dirname ${BASH_SOURCE[0]}) && pwd)"
+cd "${BASE_DIR}"
 LEDE_DIR="${BASE_DIR}/lede"
 
 # TODO: Don't clean every time
@@ -10,7 +11,7 @@ if [ ! -d "$LEDE_DIR" ]; then
     # Install dependencies
     sudo apt-get install -y git-core build-essential libssl-dev libncurses5-dev unzip gawk python2.7;
     # Clone upstream source
-    git clone https://git.lede-project.org/source.git $LEDE_DIR/;
+    git clone -b v17.01.4 --depth 1 https://git.openwrt.org/source.git $LEDE_DIR/;
 else
     cd $LEDE_DIR/;
     # Reset local changes (re-apply later)
